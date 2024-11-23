@@ -1,0 +1,67 @@
+// Function to fetch cities by state code
+function get_cities_by_state($state_code) {
+    $cities_by_state = [
+        "CDMX" => ["Mexico City", "Coyoacán", "Tlalpan", "Iztapalapa", "Azcapotzalco"],
+        "JA" => ["Guadalajara", "Tlaquepaque", "Zapopan", "Puerto Vallarta", "Tonalá"],
+        "NL" => ["Monterrey", "San Nicolás", "Guadalupe", "Apodaca", "Escobedo"],
+        "AG" => ["Aguascalientes", "Asientos", "Calvillo", "Cosío", "San Francisco de los Romo"],
+        "BC" => ["Mexicali", "Tijuana", "Ensenada", "Tecate", "Rosarito"],
+        "BS" => ["La Paz", "Los Cabos", "Loreto", "Comondú", "Mulegé"],
+        "CM" => ["Campeche", "Campeche City", "Calkiní", "Champotón", "Escárcega"],
+        "CS" => ["Tuxtla Gutiérrez", "San Cristóbal de las Casas", "Tapachula", "Comitán", "Palenque"],
+        "CH" => ["Tuxtla Gutiérrez", "San Cristóbal de las Casas", "Tapachula", "Comitán", "Palenque"],
+        "CO" => ["Saltillo", "Torreón", "Monclova", "Piedras Negras", "Frontera"],
+        "CL" => ["Colima", "Manzanillo", "Tecomán", "Villa de Álvarez", "Armería"],
+        "DG" => ["Durango", "Gómez Palacio", "Durango City", "Lerdo", "Pueblo Nuevo"],
+        "GT" => ["Guanajuato", "Irapuato", "León", "Celaya", "Salamanca"],
+        "GR" => ["Acapulco", "Chilpancingo", "Zihuatanejo", "Iguala", "Taxco"],
+        "HG" => ["Pachuca", "Tizayuca", "Mineral de la Reforma", "Tulancingo", "Actopan"],
+        "MX" => ["Toluca", "Naucalpan", "Ecatepec", "Cuautitlán Izcalli", "Tlalnepantla"],
+        "MI" => ["Morelia", "Uruapan", "Lázaro Cárdenas", "Zamora", "Pátzcuaro"],
+        "MO" => ["Cuernavaca", "Jiutepec", "Temixco", "Xochitepec", "Tepoztlán"],
+        "NA" => ["Tepic", "Xalisco", "Bahía de Banderas", "San Blas", "El Nayar"],
+        "OA" => ["Oaxaca", "Puerto Escondido", "Tuxtepec", "Juchitán", "Salina Cruz"],
+        "PU" => ["Puebla", "Tehuacán", "San Martín Texmelucan", "Cholula", "Atlixco"],
+        "QT" => ["Querétaro", "El Marqués", "San Juan del Río", "El Pueblito", "Tequisquiapan"],
+        "QR" => ["Chetumal", "Cancún", "Playa del Carmen", "Tulum", "Isla Mujeres"],
+        "SL" => ["San Luis Potosí", "Soledad de Graciano Sánchez", "Ciudad Valles", "Matehuala", "Rioverde"],
+        "SI" => ["Culiacán", "Mazatlán", "Los Mochis", "El Fuerte", "Guasave"],
+        "SO" => ["Hermosillo", "Obregón", "Nogales", "San Luis Río Colorado", "Nacozari de García"],
+        "TB" => ["Villahermosa", "Cárdenas", "Centro", "Macuspana", "Teapa"],
+        "TM" => ["Ciudad Victoria", "Matamoros", "Reynosa", "Tampico", "Mante"],
+        "TL" => ["Tlaxcala", "Apizaco", "Tlaxcala de Xicohténcatl", "Xaloztoc", "San Pablo del Monte"],
+        "VER" => ["Xalapa", "Veracruz", "Córdoba", "Poza Rica", "Coatzacoalcos"],
+        "YU" => ["Mérida", "Progreso", "Valladolid", "Tizimin", "Izamal"],
+        "ZA" => ["Zacatecas", "Guadalupe", "Fresnillo", "Jerez", "Sombrerete"],
+        // Add other states as needed
+    ];
+    return $cities_by_state[$state_code] ?? [];
+}
+
+// AJAX handler for fetching cities
+add_action('wp_ajax_fetch_cities', function() {
+    if (!empty($_POST['state_code'])) {
+        wp_send_json_success(get_cities_by_state(sanitize_text_field($_POST['state_code'])));
+    } else {
+        wp_send_json_error('State code not provided.');
+    }
+});
+
+// Enqueue custom script
+add_action('wp_enqueue_scripts', function() {
+    wp_enqueue_script('fetch-cities', get_template_directory_uri() . '/js/fetch-cities.js', ['jquery'], null, true);
+    wp_localize_script('fetch-cities', 'ajax_object', [
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'default_city' => get_user_meta(get_current_user_id(), 'user-region', true) // Fetch user's city
+    ]);
+});
+
+// Save user meta upon form submission
+add_action('jet_form_builder/after_submit', function($form_data) {
+    if (is_user_logged_in()) {
+        $user_id = get_current_user_id();
+        update_user_meta($user_id, 'state', sanitize_text_field($form_data['state'] ?? ''));
+        update_user_meta($user_id, 'user-region', sanitize_text_field($form_data['user-region'] ?? ''));
+    }
+});
+
